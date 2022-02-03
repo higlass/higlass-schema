@@ -2,11 +2,23 @@ from __future__ import annotations
 
 import json
 from collections import OrderedDict
-from typing import Any, Dict, Generator, List, Optional, Tuple, TypedDict, Union
+from typing import (
+    Any,
+    Dict,
+    Generator,
+    Generic,
+    List,
+    Optional,
+    Tuple,
+    TypedDict,
+    TypeVar,
+    Union,
+)
 
 from pydantic import BaseModel as PydanticBaseModel
 from pydantic import Extra, Field, conlist
 from pydantic.class_validators import root_validator
+from pydantic.generics import GenericModel as PydanticGenericModel
 from typing_extensions import Literal
 
 from .utils import exclude_properties_titles, get_schema_of, simplify_enum_schema
@@ -14,6 +26,13 @@ from .utils import exclude_properties_titles, get_schema_of, simplify_enum_schem
 
 # Override Pydantic defaults
 class BaseModel(PydanticBaseModel):
+    class Config:
+        extra = Extra.forbid
+        schema_extra = staticmethod(lambda s, _: exclude_properties_titles(s))
+
+
+# Override Pydantic defaults
+class GenericModel(PydanticGenericModel):
     class Config:
         extra = Extra.forbid
         schema_extra = staticmethod(lambda s, _: exclude_properties_titles(s))
@@ -229,10 +248,6 @@ class Data(BaseModel):
     tiles: Optional[Tile] = None
 
 
-from typing import Generic, TypeVar
-
-from pydantic.generics import GenericModel
-
 TrackType = TypeVar("TrackType", bound=str)
 
 
@@ -384,19 +399,22 @@ CombinedTrack.update_forward_refs()
 ##################################################
 
 
-class Tracks(BaseModel):
+TrackT = TypeVar("TrackT", bound=Track)
+
+
+class Tracks(GenericModel, Generic[TrackT]):
     """Track layout within a View."""
 
     class Config:
         extra = Extra.forbid
 
-    left: Optional[List[Track]] = None
-    right: Optional[List[Track]] = None
-    top: Optional[List[Track]] = None
-    bottom: Optional[List[Track]] = None
-    center: Optional[List[Track]] = None
-    whole: Optional[List[Track]] = None
-    gallery: Optional[List[Track]] = None
+    left: Optional[List[TrackT]] = None
+    right: Optional[List[TrackT]] = None
+    top: Optional[List[TrackT]] = None
+    bottom: Optional[List[TrackT]] = None
+    center: Optional[List[TrackT]] = None
+    whole: Optional[List[TrackT]] = None
+    gallery: Optional[List[TrackT]] = None
 
 
 class Layout(BaseModel):
@@ -442,14 +460,14 @@ class GenomePositionSearchBox(BaseModel):
     )
 
 
-class View(BaseModel):
+class View(GenericModel, Generic[TrackT]):
     """An arrangment of Tracks to display within a given Layout."""
 
     class Config:
         extra = Extra.forbid
 
     layout: Layout
-    tracks: Tracks
+    tracks: Tracks[TrackT]
     uid: Optional[str] = None
     autocompleteSource: Optional[str] = None
     chromInfoPath: Optional[str] = None
@@ -467,8 +485,10 @@ class View(BaseModel):
 # Viewconf                                       #
 ##################################################
 
+ViewT = TypeVar("ViewT", bound=View)
 
-class Viewconf(BaseModel):
+
+class Viewconf(GenericModel, Generic[ViewT]):
     """Root object describing a HiGlass visualization."""
 
     class Config:
@@ -482,7 +502,7 @@ class Viewconf(BaseModel):
     compactLayout: Optional[bool] = None
     exportViewUrl: Optional[str] = None
     trackSourceServers: Optional[conlist(str, min_items=1)] = None
-    views: Optional[conlist(View, min_items=1)] = None
+    views: Optional[conlist(ViewT, min_items=1)] = None
     zoomLocks: Optional[ZoomLocks] = None
     locationLocks: Optional[LocationLocks] = None
     valueScaleLocks: Optional[ValueScaleLocks] = None
