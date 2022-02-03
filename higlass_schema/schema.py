@@ -15,10 +15,10 @@ from typing import (
 )
 
 from pydantic import BaseModel as PydanticBaseModel
-from pydantic import Extra, Field, validator
+from pydantic import Extra, Field
 from pydantic.class_validators import root_validator
 from pydantic.generics import GenericModel as PydanticGenericModel
-from typing_extensions import Literal, TypedDict
+from typing_extensions import Literal, TypedDict, Annotated
 
 from .utils import exclude_properties_titles, get_schema_of, simplify_enum_schema
 import functools
@@ -265,6 +265,7 @@ class ValueScaleLocks(BaseModel):
 # Tracks                                         #
 ##################################################
 
+TrackTypeT = TypeVar("TrackTypeT", bound=str)
 TrackOptions = Dict[str, Any]
 TilesetInfo = Dict[str, Any]
 Tile = Dict[str, Any]
@@ -280,10 +281,7 @@ class Data(BaseModel):
     tiles: Optional[Tile] = None
 
 
-TrackType = TypeVar("TrackType", bound=str)
-
-
-class BaseTrack(GenericModel, Generic[TrackType]):
+class BaseTrack(GenericModel, Generic[TrackTypeT]):
     class Config:
         extra = Extra.forbid
 
@@ -294,7 +292,7 @@ class BaseTrack(GenericModel, Generic[TrackType]):
                 schema["properties"]["type"]
             )
 
-    type: TrackType
+    type: TrackTypeT
     uid: Optional[str] = None
     width: Optional[int] = None
     height: Optional[int] = None
@@ -533,8 +531,8 @@ class Viewconf(GenericModel, Generic[ViewT]):
     zoomFixed: Optional[bool] = None
     compactLayout: Optional[bool] = None
     exportViewUrl: Optional[str] = None
-    trackSourceServers: Optional[List[str]] = Field(..., min_items=1)
-    views: Optional[List[ViewT]] = Field(..., min_items=1)
+    trackSourceServers: Optional[Annotated[List[str], Field(..., min_items=1)]] = None
+    views: Optional[Annotated[List[ViewT], Field(..., min_items=1)]] = None
     zoomLocks: Optional[ZoomLocks] = None
     locationLocks: Optional[LocationLocks] = None
     valueScaleLocks: Optional[ValueScaleLocks] = None
