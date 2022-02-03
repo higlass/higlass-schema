@@ -10,32 +10,64 @@ from typing import (
     List,
     Optional,
     Tuple,
-    TypedDict,
     TypeVar,
     Union,
 )
 
 from pydantic import BaseModel as PydanticBaseModel
-from pydantic import Extra, Field, conlist
+from pydantic import Extra, Field, validator
 from pydantic.class_validators import root_validator
 from pydantic.generics import GenericModel as PydanticGenericModel
-from typing_extensions import Literal
+from typing_extensions import Literal, TypedDict
 
 from .utils import exclude_properties_titles, get_schema_of, simplify_enum_schema
+import functools
 
 
-# Override Pydantic defaults
+# Override Basemodel
 class BaseModel(PydanticBaseModel):
     class Config:
-        extra = Extra.forbid
+        # wether __setattr__ should perform validation
+        validate_assignment = True
+        # exclude titles by defualt
         schema_extra = staticmethod(lambda s, _: exclude_properties_titles(s))
 
+    # nice repr if printing with rich
+    def __rich_repr__(self):
+        return iter(self)
 
-# Override Pydantic defaults
+    # Omit fields which are None by default.
+    @functools.wraps(PydanticBaseModel.dict)
+    def dict(self, exclude_none: bool = True, **kwargs):
+        return super().dict(exclude_none=exclude_none, **kwargs)
+
+    # Omit fields which are None by default.
+    @functools.wraps(PydanticBaseModel.json)
+    def json(self, exclude_none: bool = True, **kwargs):
+        return super().json(exclude_none=exclude_none, **kwargs)
+
+
+# Override Defaults for generic models
 class GenericModel(PydanticGenericModel):
     class Config:
-        extra = Extra.forbid
+        # wether __setattr__ should perform validation
+        validate_assignment = True
+        # exclude titles by defualt
         schema_extra = staticmethod(lambda s, _: exclude_properties_titles(s))
+
+    # nice repr if printing with rich
+    def __rich_repr__(self):
+        return iter(self)
+
+    # Omit fields which are None by default.
+    @functools.wraps(PydanticBaseModel.dict)
+    def dict(self, exclude_none: bool = True, **kwargs):
+        return super().dict(exclude_none=exclude_none, **kwargs)
+
+    # Omit fields which are None by default.
+    @functools.wraps(PydanticBaseModel.json)
+    def json(self, exclude_none: bool = True, **kwargs):
+        return super().json(exclude_none=exclude_none, **kwargs)
 
 
 ##################################################
@@ -501,8 +533,8 @@ class Viewconf(GenericModel, Generic[ViewT]):
     zoomFixed: Optional[bool] = None
     compactLayout: Optional[bool] = None
     exportViewUrl: Optional[str] = None
-    trackSourceServers: Optional[conlist(str, min_items=1)] = None
-    views: Optional[conlist(ViewT, min_items=1)] = None
+    trackSourceServers: Optional[List[str]] = Field(..., min_items=1)
+    views: Optional[List[ViewT]] = Field(..., min_items=1)
     zoomLocks: Optional[ZoomLocks] = None
     locationLocks: Optional[LocationLocks] = None
     valueScaleLocks: Optional[ValueScaleLocks] = None
@@ -516,7 +548,7 @@ def schema():
     for d in root["definitions"].values():
         d.pop("title", None)
 
-    # nice ordering
+    # nice ordering, insert additional metadata
     ordered_root = OrderedDict(
         [
             ("$schema", "http://json-schema.org/draft-07/schema#"),
