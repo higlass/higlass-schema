@@ -23,7 +23,7 @@ jobs:
           hatch run lint
 
   Test:
-    name: ${{ matrix.platform }} py${{ matrix.python-version }}
+    name: Test ${{ matrix.python-version }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
