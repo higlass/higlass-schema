@@ -50,8 +50,9 @@ source = "vcs"
 features = ["dev"]
 
 [tool.hatch.envs.default.scripts]
-fmt = "black ."
-lint = "ruff ."
+fix = "black . && ruff --fix ."
+lint = "black --check . && ruff ."
+test = "pytest ."
 
 # https://github.com/charliermarsh/ruff
 [tool.ruff]
