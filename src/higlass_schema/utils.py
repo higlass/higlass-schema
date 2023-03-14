@@ -36,7 +36,6 @@ def get_schema_of(type_: Any):
 
 
 def simplify_enum_schema(schema: Dict[str, Any]):
-
     # reduce union of enums into single enum
     if "anyOf" in schema:
         enum = []

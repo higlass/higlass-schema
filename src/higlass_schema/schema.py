@@ -146,6 +146,7 @@ class Overlay(BaseModel):
 
 LockEntry = Tuple[float, float, float]
 
+
 # We'd rather have tuples in our final model, because a
 # __root__ model is clunky from a python user perspective.
 # We create this class to get validation for free in `root_validator`
