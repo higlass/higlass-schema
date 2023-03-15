@@ -405,21 +405,23 @@ class CombinedTrack(BaseTrack[Literal["combined"]]):
     class Config:
         extra = Extra.ignore
 
-    contents: list[Track]
+    contents: list[
+        EnumTrack
+        | CombinedTrack
+        | HeatmapTrack
+        | IndependentViewportProjectionTrack
+        | BaseTrack
+    ]
     position: str | None = None
 
 
-Track = Union[
-    EnumTrack,
-    CombinedTrack,
-    HeatmapTrack,
-    IndependentViewportProjectionTrack,
-    BaseTrack,
-]
-
-# CombinedTrack is recursive and needs delayed evaluation of annoations
-CombinedTrack.update_forward_refs()
-
+Track = (
+    EnumTrack
+    | CombinedTrack
+    | HeatmapTrack
+    | IndependentViewportProjectionTrack
+    | BaseTrack
+)
 
 ##################################################
 # View                                           #
