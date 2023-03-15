@@ -1,4 +1,3 @@
-import functools
 import json
 from collections import OrderedDict
 from typing import (
@@ -34,13 +33,9 @@ class BaseModel(PydanticBaseModel):
     def __rich_repr__(self):
         return iter(self)
 
-    # Omit fields which are None by default.
-    @functools.wraps(PydanticBaseModel.dict)
     def dict(self, exclude_none: bool = True, **kwargs):
         return super().dict(exclude_none=exclude_none, **kwargs)
 
-    # Omit fields which are None by default.
-    @functools.wraps(PydanticBaseModel.json)
     def json(self, exclude_none: bool = True, **kwargs):
         return super().json(exclude_none=exclude_none, **kwargs)
 
@@ -57,13 +52,9 @@ class GenericModel(PydanticGenericModel):
     def __rich_repr__(self):
         return iter(self)
 
-    # Omit fields which are None by default.
-    @functools.wraps(PydanticBaseModel.dict)
     def dict(self, exclude_none: bool = True, **kwargs):
         return super().dict(exclude_none=exclude_none, **kwargs)
 
-    # Omit fields which are None by default.
-    @functools.wraps(PydanticBaseModel.json)
     def json(self, exclude_none: bool = True, **kwargs):
         return super().json(exclude_none=exclude_none, **kwargs)
 
