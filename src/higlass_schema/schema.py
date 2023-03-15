@@ -537,7 +537,7 @@ class Viewconf(GenericModel, Generic[ViewT]):
             # manually add minItems for views
             # because pydantic.conlist breaks generics and Annotated
             # fields don't added
-            for prop in ("views"):
+            for prop in ["views"]:
                 schema["properties"][prop]["minItems"] = 1
 
     editable: Optional[bool] = True
