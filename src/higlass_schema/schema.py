@@ -534,10 +534,10 @@ class Viewconf(GenericModel, Generic[ViewT]):
         @staticmethod
         def schema_extra(schema: Dict[str, Any], _) -> None:
             exclude_properties_titles(schema)
-            # manually add minItems for views/trackSourceServers
+            # manually add minItems for views
             # because pydantic.conlist breaks generics and Annotated
             # fields don't added
-            for prop in ("views", "trackSourceServers"):
+            for prop in ("views"):
                 schema["properties"][prop]["minItems"] = 1
 
     editable: Optional[bool] = True
