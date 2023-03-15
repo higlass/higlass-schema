@@ -23,6 +23,7 @@ jobs:
           hatch run lint
 
   Schema:
+    name: JavaScript validation with JSON Schema
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3

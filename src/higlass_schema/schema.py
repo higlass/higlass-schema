@@ -546,7 +546,7 @@ class Viewconf(GenericModel, Generic[ViewT]):
     zoomFixed: Optional[bool] = None
     compactLayout: Optional[bool] = None
     exportViewUrl: Optional[str] = None
-    trackSourceServers: Optional[Annotated[List[str], Field(min_items=1)]] = None
+    trackSourceServers: Optional[List[str]] = None
     views: Optional[Annotated[List[ViewT], Field(min_items=1)]] = None
     zoomLocks: Optional[ZoomLocks] = None
     locationLocks: Optional[LocationLocks] = None
