@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 from collections import OrderedDict
 from typing import (
@@ -5,8 +7,7 @@ from typing import (
     Dict,
     Generator,
     Generic,
-    List,
-    Optional,
+    Literal,
     Tuple,
     TypeVar,
     Union,
@@ -16,7 +17,7 @@ from pydantic import BaseModel as PydanticBaseModel
 from pydantic import Extra, Field
 from pydantic.class_validators import root_validator
 from pydantic.generics import GenericModel as PydanticGenericModel
-from typing_extensions import Annotated, Literal, TypedDict
+from typing_extensions import Annotated, TypedDict
 
 from .utils import exclude_properties_titles, get_schema_of, simplify_enum_schema
 
@@ -67,26 +68,26 @@ Domain = Tuple[float, float]
 
 
 class OverlayOptions(BaseModel):
-    extent: Optional[List[List[int]]] = None
-    minWidth: Optional[float] = None
-    fill: Optional[str] = None
-    fillOpacity: Optional[float] = None
-    stroke: Optional[str] = None
-    strokeOpacity: Optional[float] = None
-    strokeWidth: Optional[float] = None
-    strokePos: Optional[Union[str, List[str]]] = None
-    outline: Optional[str] = None
-    outlineOpacity: Optional[float] = None
-    outlineWidth: Optional[float] = None
-    outlinePos: Optional[Union[str, List[str]]] = None
+    extent: list[list[int]] | None = None
+    minWidth: float | None = None
+    fill: str | None = None
+    fillOpacity: float | None = None
+    stroke: str | None = None
+    strokeOpacity: float | None = None
+    strokeWidth: float | None = None
+    strokePos: str | list[str] | None = None
+    outline: str | None = None
+    outlineOpacity: float | None = None
+    outlineWidth: float | None = None
+    outlinePos: str | list[str] | None = None
 
 
 class Overlay(BaseModel):
-    type: Optional[str] = None
-    uid: Optional[str] = None
-    chromInfoPath: Optional[str] = None
-    includes: Optional[List[str]] = None
-    options: Optional[OverlayOptions] = None
+    type: str | None = None
+    uid: str | None = None
+    chromInfoPath: str | None = None
+    includes: list[str] | None = None
+    options: OverlayOptions | None = None
 
 
 ##################################################
@@ -144,24 +145,24 @@ class _LockEntryModel(BaseModel):
 
 
 class Lock(BaseModel):
-    uid: Optional[str] = None
+    uid: str | None = None
 
     class Config:
         extra = Extra.allow
 
         @staticmethod
-        def schema_extra(schema: Dict[str, Any], _) -> None:
+        def schema_extra(schema: dict[str, Any], _) -> None:
             exclude_properties_titles(schema)
             schema["additionalProperties"] = get_schema_of(LockEntry)
 
-    def __iter__(self) -> Generator[Tuple[str, LockEntry], None, None]:
+    def __iter__(self) -> Generator[tuple[str, LockEntry], None, None]:
         for key, val in super().__iter__():
             if key not in self.__fields__:
                 yield key, val
 
     # can only validate on creation for "extra" fields
     @root_validator(pre=True)
-    def validate_locks(cls, values: Dict[str, Any]):
+    def validate_locks(cls, values: dict[str, Any]):
         for k in values:
             if k not in cls.__fields__:
                 # validate using our custom validator
@@ -181,25 +182,25 @@ class _ValueScaleLockEntryModel(BaseModel):
 
 
 class ValueScaleLock(BaseModel):
-    uid: Optional[str] = None
-    ignoreOffScreenValues: Optional[bool] = None
+    uid: str | None = None
+    ignoreOffScreenValues: bool | None = None
 
     class Config:
         extra = Extra.allow
 
         @staticmethod
-        def schema_extra(schema: Dict[str, Any], _) -> None:
+        def schema_extra(schema: dict[str, Any], _) -> None:
             exclude_properties_titles(schema)
             schema["additionalProperties"] = get_schema_of(ValueScaleLockEntry)
 
-    def __iter__(self) -> Generator[Tuple[str, ValueScaleLockEntry], None, None]:
+    def __iter__(self) -> Generator[tuple[str, ValueScaleLockEntry], None, None]:
         for key, val in super().__iter__():
             if key not in self.__fields__:
                 yield key, val
 
     # can only validate on creation for "extra" fields
     @root_validator(pre=True)
-    def validate_locks(cls, values: Dict[str, Any]):
+    def validate_locks(cls, values: dict[str, Any]):
         for k in values:
             if k not in cls.__fields__:
                 # validate using our custom validator
@@ -212,7 +213,7 @@ class ValueScaleLock(BaseModel):
 class AxisSpecificLock(BaseModel):
     class Config:
         @staticmethod
-        def schema_extra(schema: Dict[str, Any], _: Any) -> None:
+        def schema_extra(schema: dict[str, Any], _: Any) -> None:
             exclude_properties_titles(schema)
             schema["properties"]["axis"] = simplify_enum_schema(
                 schema["properties"]["axis"]
@@ -223,31 +224,31 @@ class AxisSpecificLock(BaseModel):
 
 
 class AxisSpecificLocks(BaseModel):
-    x: Optional[AxisSpecificLock] = None
-    y: Optional[AxisSpecificLock] = None
+    x: AxisSpecificLock | None = None
+    y: AxisSpecificLock | None = None
 
 
 class LocationLocks(BaseModel):
-    locksByViewUid: Dict[str, Union[str, AxisSpecificLocks]] = Field(
+    locksByViewUid: dict[str, str | AxisSpecificLocks] = Field(
         default_factory=dict
     )
-    locksDict: Dict[str, Lock] = Field(default_factory=dict)
+    locksDict: dict[str, Lock] = Field(default_factory=dict)
 
 
 class ZoomLocks(BaseModel):
     class Config:
         extra = Extra.forbid
 
-    locksByViewUid: Dict[str, str] = Field(default_factory=dict)
-    locksDict: Dict[str, Lock] = Field(default_factory=dict)
+    locksByViewUid: dict[str, str] = Field(default_factory=dict)
+    locksDict: dict[str, Lock] = Field(default_factory=dict)
 
 
 class ValueScaleLocks(BaseModel):
     class Config:
         extra = Extra.forbid
 
-    locksByViewUid: Dict[str, str] = Field(default_factory=dict)
-    locksDict: Dict[str, ValueScaleLock] = Field(default_factory=dict)
+    locksByViewUid: dict[str, str] = Field(default_factory=dict)
+    locksDict: dict[str, ValueScaleLock] = Field(default_factory=dict)
 
 
 ##################################################
@@ -261,13 +262,13 @@ Tile = Dict[str, Any]
 
 
 class Data(BaseModel):
-    type: Optional[str] = None
-    url: Optional[str] = None
-    server: Optional[str] = None
-    filetype: Optional[str] = None
-    children: Optional[List] = None
-    tilesetInfo: Optional[TilesetInfo] = None
-    tiles: Optional[Tile] = None
+    type: str | None = None
+    url: str | None = None
+    server: str | None = None
+    filetype: str | None = None
+    children: list | None = None
+    tilesetInfo: TilesetInfo | None = None
+    tiles: Tile | None = None
 
 
 class BaseTrack(GenericModel, Generic[TrackTypeT]):
@@ -275,22 +276,22 @@ class BaseTrack(GenericModel, Generic[TrackTypeT]):
         extra = Extra.allow
 
         @staticmethod
-        def schema_extra(schema: Dict[str, Any], _: Any) -> None:
+        def schema_extra(schema: dict[str, Any], _: Any) -> None:
             exclude_properties_titles(schema)
             props = schema["properties"]
             if "enum" in props["type"] or "allOf" in props["type"]:
                 props["type"] = simplify_enum_schema(props["type"])
 
     type: TrackTypeT
-    uid: Optional[str] = None
-    width: Optional[int] = None
-    height: Optional[int] = None
-    options: Optional[TrackOptions] = None
+    uid: str | None = None
+    width: int | None = None
+    height: int | None = None
+    options: TrackOptions | None = None
 
 
 class Tileset(BaseModel):
-    tilesetUid: Optional[str] = None
-    server: Optional[str] = None
+    tilesetUid: str | None = None
+    server: str | None = None
 
 
 ViewportProjectionTrackType = Literal[
@@ -375,20 +376,20 @@ class EnumTrack(BaseTrack[EnumTrackType], Tileset):
     class Config:
         extra = Extra.ignore
 
-    data: Optional[Data] = None
-    chromInfoPath: Optional[str] = None
-    fromViewUid: Optional[str] = None
-    x: Optional[float] = None
-    y: Optional[float] = None
+    data: Data | None = None
+    chromInfoPath: str | None = None
+    fromViewUid: str | None = None
+    x: float | None = None
+    y: float | None = None
 
 
 class HeatmapTrack(BaseTrack[Literal["heatmap"]], Tileset):
     class Config:
         extra = Extra.ignore
 
-    data: Optional[Data] = None
-    position: Optional[str] = None
-    transforms: Optional[List] = None
+    data: Data | None = None
+    position: str | None = None
+    transforms: list | None = None
 
 
 class IndependentViewportProjectionTrack(BaseTrack[ViewportProjectionTrackType]):
@@ -396,19 +397,19 @@ class IndependentViewportProjectionTrack(BaseTrack[ViewportProjectionTrackType])
         extra = Extra.ignore
 
     fromViewUid: None = None
-    projectionXDomain: Optional[Domain] = None
-    projectionYDomain: Optional[Domain] = None
-    transforms: Optional[List] = None
-    x: Optional[float] = None
-    y: Optional[float] = None
+    projectionXDomain: Domain | None = None
+    projectionYDomain: Domain | None = None
+    transforms: list | None = None
+    x: float | None = None
+    y: float | None = None
 
 
 class CombinedTrack(BaseTrack[Literal["combined"]]):
     class Config:
         extra = Extra.ignore
 
-    contents: List["Track"]
-    position: Optional[str] = None
+    contents: list[Track]
+    position: str | None = None
 
 
 Track = Union[
@@ -439,15 +440,15 @@ class Tracks(GenericModel, Generic[TrackT]):
     class Config:
         extra = Extra.ignore
 
-    left: Optional[List[TrackT]] = None
-    right: Optional[List[TrackT]] = None
-    top: Optional[List[TrackT]] = None
-    bottom: Optional[List[TrackT]] = None
-    center: Optional[List[TrackT]] = None
-    whole: Optional[List[TrackT]] = None
-    gallery: Optional[List[TrackT]] = None
+    left: list[TrackT] | None = None
+    right: list[TrackT] | None = None
+    top: list[TrackT] | None = None
+    bottom: list[TrackT] | None = None
+    center: list[TrackT] | None = None
+    whole: list[TrackT] | None = None
+    gallery: list[TrackT] | None = None
 
-    def __iter__(self) -> Generator[Tuple[TrackPosition, TrackT], None, None]:
+    def __iter__(self) -> Generator[tuple[TrackPosition, TrackT], None, None]:
         for pos, tlist in super().__iter__():
             if tlist is None:
                 continue
@@ -465,34 +466,34 @@ class Layout(BaseModel):
     y: int = Field(default=0, description="The Y Position")
     w: int = Field(default=12, description="Width")
     h: int = Field(default=12, description="Height")
-    moved: Optional[bool] = None
-    static: Optional[bool] = None
+    moved: bool | None = None
+    static: bool | None = None
 
 
 class GenomePositionSearchBox(BaseModel):
     """Locations to search within a View."""
 
-    autocompleteServer: Optional[str] = Field(
+    autocompleteServer: str | None = Field(
         default=None,
         examples=["//higlass.io/api/v1"],
         description="The Autocomplete Server URL",
     )
-    autocompleteId: Optional[str] = Field(
+    autocompleteId: str | None = Field(
         default=None,
         examples=["OHJakQICQD6gTD7skx4EWA"],
         description="The Autocomplete ID",
     )
-    chromInfoServer: Optional[str] = Field(
+    chromInfoServer: str | None = Field(
         default=None,
         examples=["//higlass.io/api/v1"],
         description="The Chrominfo Server URL",
     )
-    chromInfoId: Optional[str] = Field(
+    chromInfoId: str | None = Field(
         default=None,
         examples=["hg19"],
         description="The Chromosome Info ID",
     )
-    visible: Optional[bool] = Field(
+    visible: bool | None = Field(
         default=None,
         description="The Visible Schema",
     )
@@ -506,17 +507,17 @@ class View(GenericModel, Generic[TrackT]):
 
     layout: Layout
     tracks: Tracks[TrackT]
-    uid: Optional[str] = None
-    autocompleteSource: Optional[str] = None
-    chromInfoPath: Optional[str] = None
-    genomePositionSearchBox: Optional[GenomePositionSearchBox] = None
-    genomePositionSearchBoxVisible: Optional[bool] = None
-    initialXDomain: Optional[Domain] = None
-    initialYDomain: Optional[Domain] = None
-    overlays: Optional[List[Overlay]] = None
-    selectionView: Optional[bool] = None
-    zoomFixed: Optional[bool] = None
-    zoomLimits: Tuple[float, Optional[float]] = (1, None)
+    uid: str | None = None
+    autocompleteSource: str | None = None
+    chromInfoPath: str | None = None
+    genomePositionSearchBox: GenomePositionSearchBox | None = None
+    genomePositionSearchBoxVisible: bool | None = None
+    initialXDomain: Domain | None = None
+    initialYDomain: Domain | None = None
+    overlays: list[Overlay] | None = None
+    selectionView: bool | None = None
+    zoomFixed: bool | None = None
+    zoomLimits: tuple[float, float | None] = (1, None)
 
 
 ##################################################
@@ -534,7 +535,7 @@ class Viewconf(GenericModel, Generic[ViewT]):
         title = "HiGlass viewconf"
 
         @staticmethod
-        def schema_extra(schema: Dict[str, Any], _) -> None:
+        def schema_extra(schema: dict[str, Any], _) -> None:
             exclude_properties_titles(schema)
             # manually add minItems for views
             # because pydantic.conlist breaks generics and Annotated
@@ -542,18 +543,18 @@ class Viewconf(GenericModel, Generic[ViewT]):
             for prop in ["views"]:
                 schema["properties"][prop]["minItems"] = 1
 
-    editable: Optional[bool] = True
-    viewEditable: Optional[bool] = True
-    tracksEditable: Optional[bool] = True
-    zoomFixed: Optional[bool] = None
-    compactLayout: Optional[bool] = None
-    exportViewUrl: Optional[str] = None
-    trackSourceServers: Optional[List[str]] = None
-    views: Optional[Annotated[List[ViewT], Field(min_items=1)]] = None
-    zoomLocks: Optional[ZoomLocks] = None
-    locationLocks: Optional[LocationLocks] = None
-    valueScaleLocks: Optional[ValueScaleLocks] = None
-    chromInfoPath: Optional[str] = None
+    editable: bool | None = True
+    viewEditable: bool | None = True
+    tracksEditable: bool | None = True
+    zoomFixed: bool | None = None
+    compactLayout: bool | None = None
+    exportViewUrl: str | None = None
+    trackSourceServers: list[str] | None = None
+    views: Annotated[list[ViewT], Field(min_items=1)] | None = None
+    zoomLocks: ZoomLocks | None = None
+    locationLocks: LocationLocks | None = None
+    valueScaleLocks: ValueScaleLocks | None = None
+    chromInfoPath: str | None = None
 
 
 def schema():
