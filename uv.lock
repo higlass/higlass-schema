@@ -71,7 +71,7 @@ wheels = [
 
 [[package]]
 name = "higlass-schema"
-version = "0.1.1.dev0+g28fa813.d20241018"
+version = "0.1.1.dev4+ga40d8d2.d20241018"
 source = { editable = "." }
 dependencies = [
     { name = "pydantic" },
@@ -88,7 +88,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "pydantic", specifier = ">=1.10,<2.0" },
-    { name = "rich", specifier = ">=13.3.3" },
+    { name = "rich", specifier = ">=13.0.0" },
 ]
 
 [package.metadata.requires-dev]
