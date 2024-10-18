@@ -22,7 +22,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Operating System :: OS Independent",
 ]
-url = { homepage = "https://github.com/higlass/higlass-schema" }
+urls = { homepage = "https://github.com/higlass/higlass-schema" }
 requires-python = ">=3.8"
 dynamic = ["version"]
 dependencies = [
@@ -30,12 +30,8 @@ dependencies = [
     "rich>=13.3.3",
 ]
 
-[project.optional-dependencies]
-dev = [
-  "black",
-  "pytest",
-  "ruff",
-]
+[tool.uv]
+dev-dependencies = ["black", "pytest", "ruff"]
 
 [project.scripts]
 higlass-schema = "higlass_schema.cli:main"
