@@ -17,9 +17,11 @@ def check(args: argparse.Namespace) -> None:
     try:
         if args.path == "-":
             raw = "\n".join(sys.stdin.readlines())
-            Viewconf[View[Track]].parse_raw(raw)
+            Viewconf[View[Track]].model_validate_json(raw)
         else:
-            Viewconf[View[Track]].parse_file(args.path)
+            with open(args.path, 'r') as file:
+                raw = file.read()
+            Viewconf[View[Track]].model_validate_json(raw)
         console.print("✅ valid viewconf.", style="green")
     except ValidationError:
         msg = "❌ Invalid viewconf."
