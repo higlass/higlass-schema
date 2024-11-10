@@ -14,6 +14,7 @@ from typing import (
 
 from pydantic import BaseModel as PydanticBaseModel
 from pydantic import ConfigDict, Field, RootModel, model_validator
+from pydantic.json_schema import GenerateJsonSchema
 from typing_extensions import Annotated, Literal, TypedDict
 
 from .utils import exclude_properties_titles, get_schema_of, simplify_enum_schema
@@ -496,22 +497,13 @@ class View(BaseModel, Generic[TrackT]):
 ViewT = TypeVar("ViewT", bound=View)
 
 
-def _viewconf_schema_extra(schema: Dict[str, Any], _: Any):
-    exclude_properties_titles(schema)
-    # manually add minItems for views
-    # because pydantic.conlist breaks generics and Annotated
-    # fields don't added
-    for prop in ["views"]:
-        schema["properties"][prop]["minItems"] = 1
-
-
 class Viewconf(BaseModel, Generic[ViewT]):
     """Root object describing a HiGlass visualization."""
 
     model_config = ConfigDict(
         extra="forbid",
         title="HiGlass viewconf",
-        json_schema_extra=_viewconf_schema_extra,
+        json_schema_extra=lambda s, _: exclude_properties_titles(s),
     )
 
     editable: Optional[bool] = True
@@ -529,16 +521,16 @@ class Viewconf(BaseModel, Generic[ViewT]):
 
 
 def schema():
-    root = Viewconf.schema()
+    root = Viewconf.model_json_schema()
 
     # remove titles in defintions
-    for d in root["definitions"].values():
+    for d in root["$defs"].values():
         d.pop("title", None)
 
     # nice ordering, insert additional metadata
     ordered_root = OrderedDict(
         [
-            ("$schema", "http://json-schema.org/draft-07/schema#"),
+            ("$schema", GenerateJsonSchema.schema_dialect),
             ("$id", "https://higlass.io/#viewconf"),
             *root.items(),
         ]
