@@ -531,7 +531,7 @@ def schema():
     ordered_root = OrderedDict(
         [
             ("$schema", GenerateJsonSchema.schema_dialect),
-            ("$id", "https://higlass.io/#viewconf"),
+            ("$id", "https://higlass.io/schemas/viewconf"),
             *root.items(),
         ]
     )
