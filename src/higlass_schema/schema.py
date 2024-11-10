@@ -13,7 +13,7 @@ from typing import (
 )
 
 from pydantic import BaseModel as PydanticBaseModel
-from pydantic import ConfigDict, Field, model_validator, RootModel
+from pydantic import ConfigDict, Field, RootModel, model_validator
 from typing_extensions import Annotated, Literal, TypedDict
 
 from .utils import exclude_properties_titles, get_schema_of, simplify_enum_schema
