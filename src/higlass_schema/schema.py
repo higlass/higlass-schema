@@ -13,9 +13,7 @@ from typing import (
 )
 
 from pydantic import BaseModel as PydanticBaseModel
-from pydantic import Extra, Field
-from pydantic.class_validators import root_validator
-from pydantic.generics import GenericModel as PydanticGenericModel
+from pydantic import ConfigDict, Field, model_validator, RootModel
 from typing_extensions import Annotated, Literal, TypedDict
 
 from .utils import exclude_properties_titles, get_schema_of, simplify_enum_schema
@@ -23,40 +21,20 @@ from .utils import exclude_properties_titles, get_schema_of, simplify_enum_schem
 
 # Override Basemodel
 class BaseModel(PydanticBaseModel):
-    class Config:
-        # wether __setattr__ should perform validation
-        validate_assignment = True
-        # exclude titles by defualt
-        schema_extra = staticmethod(lambda s, _: exclude_properties_titles(s))
+    model_config = ConfigDict(
+        validate_assignment=True,
+        json_schema_extra=lambda s, _: exclude_properties_titles(s),
+    )
 
     # nice repr if printing with rich
     def __rich_repr__(self):
         return iter(self)
 
-    def dict(self, exclude_none: bool = True, **kwargs):
-        return super().dict(exclude_none=exclude_none, **kwargs)
+    def model_dump(self, exclude_none: bool = True, **kwargs):
+        return super().model_dump(exclude_none=exclude_none, **kwargs)
 
-    def json(self, exclude_none: bool = True, **kwargs):
-        return super().json(exclude_none=exclude_none, **kwargs)
-
-
-# Override Defaults for generic models
-class GenericModel(PydanticGenericModel):
-    class Config:
-        # wether __setattr__ should perform validation
-        validate_assignment = True
-        # exclude titles by defualt
-        schema_extra = staticmethod(lambda s, _: exclude_properties_titles(s))
-
-    # nice repr if printing with rich
-    def __rich_repr__(self):
-        return iter(self)
-
-    def dict(self, exclude_none: bool = True, **kwargs):
-        return super().dict(exclude_none=exclude_none, **kwargs)
-
-    def json(self, exclude_none: bool = True, **kwargs):
-        return super().json(exclude_none=exclude_none, **kwargs)
+    def model_dump_json(self, exclude_none: bool = True, **kwargs):
+        return super().model_dump_json(exclude_none=exclude_none, **kwargs)
 
 
 ##################################################
@@ -139,35 +117,35 @@ LockEntry = Tuple[float, float, float]
 # We'd rather have tuples in our final model, because a
 # __root__ model is clunky from a python user perspective.
 # We create this class to get validation for free in `root_validator`
-class _LockEntryModel(BaseModel):
-    __root__: LockEntry
+class _LockEntryModel(RootModel[LockEntry]):
+    pass
+
+
+def _lock_schema_extra(schema: Dict[str, Any], _: Any) -> None:
+    exclude_properties_titles(schema)
+    schema["additionalProperties"] = get_schema_of(LockEntry)
 
 
 class Lock(BaseModel):
     uid: Optional[str] = None
 
-    class Config:
-        extra = Extra.allow
-
-        @staticmethod
-        def schema_extra(schema: Dict[str, Any], _) -> None:
-            exclude_properties_titles(schema)
-            schema["additionalProperties"] = get_schema_of(LockEntry)
+    model_config = ConfigDict(extra="allow", json_schema_extra=_lock_schema_extra)
 
     def __iter__(self) -> Generator[Tuple[str, LockEntry], None, None]:
         for key, val in super().__iter__():
-            if key not in self.__fields__:
+            if key not in self.model_fields:
                 yield key, val
 
     # can only validate on creation for "extra" fields
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def validate_locks(cls, values: Dict[str, Any]):
         for k in values:
-            if k not in cls.__fields__:
+            if k not in cls.model_fields:
                 # validate using our custom validator
-                model = _LockEntryModel.parse_obj(values[k])
+                model = _LockEntryModel.model_validate(values[k])
                 # get back the root type
-                values[k] = model.__root__
+                values[k] = model.model_dump()
         return values
 
 
@@ -176,47 +154,49 @@ class ValueScaleLockEntry(TypedDict):
     track: str
 
 
-class _ValueScaleLockEntryModel(BaseModel):
-    __root__: ValueScaleLockEntry
+class _ValueScaleLockEntryModel(RootModel[ValueScaleLockEntry]):
+    pass
+
+
+def _value_scale_lock_schema_extra(schema: Dict[str, Any], _: Any) -> None:
+    exclude_properties_titles(schema)
+    schema["additionalProperties"] = get_schema_of(ValueScaleLockEntry)
 
 
 class ValueScaleLock(BaseModel):
     uid: Optional[str] = None
     ignoreOffScreenValues: Optional[bool] = None
 
-    class Config:
-        extra = Extra.allow
-
-        @staticmethod
-        def schema_extra(schema: Dict[str, Any], _) -> None:
-            exclude_properties_titles(schema)
-            schema["additionalProperties"] = get_schema_of(ValueScaleLockEntry)
+    model_config = ConfigDict(
+        extra="allow",
+        json_schema_extra=_value_scale_lock_schema_extra,
+    )
 
     def __iter__(self) -> Generator[Tuple[str, ValueScaleLockEntry], None, None]:
         for key, val in super().__iter__():
-            if key not in self.__fields__:
+            if key not in self.model_fields:
                 yield key, val
 
     # can only validate on creation for "extra" fields
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def validate_locks(cls, values: Dict[str, Any]):
         for k in values:
-            if k not in cls.__fields__:
+            if k not in cls.model_fields:
                 # validate using our custom validator
-                model = _ValueScaleLockEntryModel.parse_obj(values[k])
+                model = _ValueScaleLockEntryModel.model_validate(values[k])
                 # read back as a regular dict
-                values[k] = model.__root__
+                values[k] = model.model_dump()
         return values
 
 
+def _axis_specific_lock_schema_extra(schema: Dict[str, Any], _: Any) -> None:
+    exclude_properties_titles(schema)
+    schema["properties"]["axis"] = simplify_enum_schema(schema["properties"]["axis"])
+
+
 class AxisSpecificLock(BaseModel):
-    class Config:
-        @staticmethod
-        def schema_extra(schema: Dict[str, Any], _: Any) -> None:
-            exclude_properties_titles(schema)
-            schema["properties"]["axis"] = simplify_enum_schema(
-                schema["properties"]["axis"]
-            )
+    model_config = ConfigDict(json_schema_extra=_axis_specific_lock_schema_extra)
 
     axis: Literal["x", "y"]
     lock: str
@@ -235,16 +215,14 @@ class LocationLocks(BaseModel):
 
 
 class ZoomLocks(BaseModel):
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     locksByViewUid: Dict[str, str] = Field(default_factory=dict)
     locksDict: Dict[str, Lock] = Field(default_factory=dict)
 
 
 class ValueScaleLocks(BaseModel):
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     locksByViewUid: Dict[str, str] = Field(default_factory=dict)
     locksDict: Dict[str, ValueScaleLock] = Field(default_factory=dict)
@@ -270,16 +248,15 @@ class Data(BaseModel):
     tiles: Optional[Tile] = None
 
 
-class BaseTrack(GenericModel, Generic[TrackTypeT]):
-    class Config:
-        extra = Extra.allow
+def _base_track_schema_extra(schema, _):
+    exclude_properties_titles(schema)
+    props = schema["properties"]
+    if "enum" in props["type"] or "allOf" in props["type"]:
+        props["type"] = simplify_enum_schema(props["type"])
 
-        @staticmethod
-        def schema_extra(schema: Dict[str, Any], _: Any) -> None:
-            exclude_properties_titles(schema)
-            props = schema["properties"]
-            if "enum" in props["type"] or "allOf" in props["type"]:
-                props["type"] = simplify_enum_schema(props["type"])
+
+class BaseTrack(BaseModel, Generic[TrackTypeT]):
+    model_config = ConfigDict(extra="allow", json_schema_extra=_base_track_schema_extra)
 
     type: TrackTypeT
     uid: Optional[str] = None
@@ -372,8 +349,7 @@ EnumTrackType = Union[
 
 
 class EnumTrack(BaseTrack[EnumTrackType], Tileset):
-    class Config:
-        extra = Extra.ignore
+    model_config = ConfigDict(extra="ignore")
 
     data: Optional[Data] = None
     chromInfoPath: Optional[str] = None
@@ -383,8 +359,7 @@ class EnumTrack(BaseTrack[EnumTrackType], Tileset):
 
 
 class HeatmapTrack(BaseTrack[Literal["heatmap"]], Tileset):
-    class Config:
-        extra = Extra.ignore
+    model_config = ConfigDict(extra="ignore")
 
     data: Optional[Data] = None
     position: Optional[str] = None
@@ -392,8 +367,7 @@ class HeatmapTrack(BaseTrack[Literal["heatmap"]], Tileset):
 
 
 class IndependentViewportProjectionTrack(BaseTrack[ViewportProjectionTrackType]):
-    class Config:
-        extra = Extra.ignore
+    model_config = ConfigDict(extra="ignore")
 
     fromViewUid: None = None
     projectionXDomain: Optional[Domain] = None
@@ -404,8 +378,7 @@ class IndependentViewportProjectionTrack(BaseTrack[ViewportProjectionTrackType])
 
 
 class CombinedTrack(BaseTrack[Literal["combined"]]):
-    class Config:
-        extra = Extra.ignore
+    model_config = ConfigDict(extra="ignore")
 
     contents: List["Track"]
     position: Optional[str] = None
@@ -420,7 +393,7 @@ Track = Union[
 ]
 
 # CombinedTrack is recursive and needs delayed evaluation of annoations
-CombinedTrack.update_forward_refs()
+CombinedTrack.model_rebuild()
 
 
 ##################################################
@@ -433,11 +406,10 @@ TrackT = TypeVar("TrackT", bound=Track)
 TrackPosition = Literal["left", "right", "top", "bottom", "center", "whole", "gallery"]
 
 
-class Tracks(GenericModel, Generic[TrackT]):
+class Tracks(BaseModel, Generic[TrackT]):
     """Track layout within a View."""
 
-    class Config:
-        extra = Extra.ignore
+    model_config = ConfigDict(extra="ignore")
 
     left: Optional[List[TrackT]] = None
     right: Optional[List[TrackT]] = None
@@ -458,8 +430,7 @@ class Tracks(GenericModel, Generic[TrackT]):
 class Layout(BaseModel):
     """Size and position of a View."""
 
-    class Config:
-        extra = Extra.ignore
+    model_config = ConfigDict(extra="ignore")
 
     x: int = Field(default=0, description="The X Position")
     y: int = Field(default=0, description="The Y Position")
@@ -498,11 +469,10 @@ class GenomePositionSearchBox(BaseModel):
     )
 
 
-class View(GenericModel, Generic[TrackT]):
+class View(BaseModel, Generic[TrackT]):
     """An arrangment of Tracks to display within a given Layout."""
 
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="ignore")
 
     layout: Layout
     tracks: Tracks[TrackT]
@@ -526,21 +496,23 @@ class View(GenericModel, Generic[TrackT]):
 ViewT = TypeVar("ViewT", bound=View)
 
 
-class Viewconf(GenericModel, Generic[ViewT]):
+def _viewconf_schema_extra(schema: Dict[str, Any], _: Any):
+    exclude_properties_titles(schema)
+    # manually add minItems for views
+    # because pydantic.conlist breaks generics and Annotated
+    # fields don't added
+    for prop in ["views"]:
+        schema["properties"][prop]["minItems"] = 1
+
+
+class Viewconf(BaseModel, Generic[ViewT]):
     """Root object describing a HiGlass visualization."""
 
-    class Config:
-        extra = Extra.forbid
-        title = "HiGlass viewconf"
-
-        @staticmethod
-        def schema_extra(schema: Dict[str, Any], _) -> None:
-            exclude_properties_titles(schema)
-            # manually add minItems for views
-            # because pydantic.conlist breaks generics and Annotated
-            # fields don't added
-            for prop in ["views"]:
-                schema["properties"][prop]["minItems"] = 1
+    model_config = ConfigDict(
+        extra="forbid",
+        title="HiGlass viewconf",
+        json_schema_extra=_viewconf_schema_extra,
+    )
 
     editable: Optional[bool] = True
     viewEditable: Optional[bool] = True
@@ -549,7 +521,7 @@ class Viewconf(GenericModel, Generic[ViewT]):
     compactLayout: Optional[bool] = None
     exportViewUrl: Optional[str] = None
     trackSourceServers: Optional[List[str]] = None
-    views: Optional[Annotated[List[ViewT], Field(min_items=1)]] = None
+    views: Optional[Annotated[List[ViewT], Field(min_length=1)]] = None
     zoomLocks: Optional[ZoomLocks] = None
     locationLocks: Optional[LocationLocks] = None
     valueScaleLocks: Optional[ValueScaleLocks] = None

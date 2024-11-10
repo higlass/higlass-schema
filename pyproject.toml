@@ -10,7 +10,7 @@ license = { text = "MIT" }
 readme = "README.md"
 requires-python = ">=3.8"
 dynamic = ["version"]
-dependencies = ["pydantic>=1.10,<2.0", "rich>=13.0.0"]
+dependencies = ["pydantic>=2.0", "rich>=13.0.0"]
 
 [project.urls]
 homepage = "https://github.com/higlass/higlass-schema"
