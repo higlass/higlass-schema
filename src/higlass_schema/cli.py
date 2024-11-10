@@ -19,7 +19,7 @@ def check(args: argparse.Namespace) -> None:
             raw = "\n".join(sys.stdin.readlines())
             Viewconf[View[Track]].model_validate_json(raw)
         else:
-            with open(args.path, 'r') as file:
+            with open(args.path) as file:
                 raw = file.read()
             Viewconf[View[Track]].model_validate_json(raw)
         console.print("✅ valid viewconf.", style="green")
