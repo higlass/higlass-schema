@@ -38,7 +38,7 @@ jobs:
         with:
           node-version: '20.x'
       - run: npm install -g ajv-cli
-      - run: ajv validate -s schema.json -d "tests/fixtures/{docs/examples/viewconfs,test/{view-configs,view-configs-more}}/*.json"
+      - run: ajv validate --spec=draft2020 -s schema.json -d "tests/fixtures/{docs/examples/viewconfs,test/{view-configs,view-configs-more}}/*.json"
 
   Test:
     name: Test ${{ matrix.python-version }}
