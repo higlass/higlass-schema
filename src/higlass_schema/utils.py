@@ -30,11 +30,9 @@ class _GenerateJsonSchema(GenerateJsonSchema):
         self, schema: core_schema.CoreSchema, mode: JsonSchemaMode = "validation"
     ) -> JsonSchemaValue:
         json_schema = super().generate(schema, mode=mode)
-        json_schema["$schema"] = self.schema_dialect
-        json_schema["title"] = "HiGlass viewconf"
+        # clear the titles from the definitions
         for d in json_schema.get("$defs", {}).values():
             d.pop("title", None)
-
         return json_schema
 
 
@@ -43,11 +41,7 @@ ModelT = TypeVar("ModelT", bound=BaseModel)
 
 
 def get_schema_of(type_: object):
-    schema = TypeAdapter(type_).json_schema(schema_generator=_GenerateJsonSchema)
-    # remove the title and $schema fields
-    schema.pop("title", None)
-    schema.pop("$schema", None)
-    return schema
+    return TypeAdapter(type_).json_schema(schema_generator=_GenerateJsonSchema)
 
 
 def simplify_enum_schema(schema: Dict[str, Any]):

@@ -496,7 +496,10 @@ class Viewconf(BaseModel, Generic[ViewT]):
 
 
 def schema():
-    return Viewconf.model_json_schema(schema_generator=_GenerateJsonSchema)
+    json_schema = Viewconf.model_json_schema(schema_generator=_GenerateJsonSchema)
+    json_schema["$schema"] = _GenerateJsonSchema.schema_dialect
+    json_schema["title"] = "HiGlass viewconf"
+    return json_schema
 
 
 def schema_json(**kwargs):
