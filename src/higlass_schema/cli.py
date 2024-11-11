@@ -10,7 +10,7 @@ console = Console()
 
 
 def export(_: argparse.Namespace) -> None:
-    console.print_json(schema_json(indent=2))
+    print(schema_json())
 
 
 def check(args: argparse.Namespace) -> None:
