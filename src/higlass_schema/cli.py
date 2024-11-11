@@ -30,7 +30,8 @@ def check(args: argparse.Namespace) -> None:
             console.print_exception()
 
         console.print(
-            f"{msg} Run [white]`hgschema check --verbose`[/white] for more details.",
+            f"{msg} Run [white]`higlass-schema check --verbose`[/white] for "
+            "more details.",
             style="yellow",
         )
         sys.exit(1)
