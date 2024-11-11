@@ -87,7 +87,7 @@ wheels = [
 
 [[package]]
 name = "higlass-schema"
-version = "0.1.1.dev5+gcb01091.d20241110"
+version = "0.1.1.dev4+ga14c66a.d20241111"
 source = { editable = "." }
 dependencies = [
     { name = "pydantic" },
