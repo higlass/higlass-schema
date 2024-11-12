@@ -15,8 +15,8 @@ dependencies = ["pydantic>=2.0", "rich>=13.0.0"]
 [project.urls]
 homepage = "https://github.com/higlass/higlass-schema"
 
-[tool.uv]
-dev-dependencies = ["black", "pytest", "ruff"]
+[dependency-groups]
+dev = ["black", "pytest", "ruff"]
 
 [project.scripts]
 higlass-schema = "higlass_schema.cli:main"

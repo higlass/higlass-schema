@@ -1,5 +1,4 @@
 import json
-from collections import OrderedDict
 from typing import (
     Any,
     Dict,
@@ -14,18 +13,14 @@ from typing import (
 
 from pydantic import BaseModel as PydanticBaseModel
 from pydantic import ConfigDict, Field, RootModel, model_validator
-from pydantic.json_schema import GenerateJsonSchema
 from typing_extensions import Annotated, Literal, TypedDict
 
-from .utils import exclude_properties_titles, get_schema_of, simplify_enum_schema
+from .utils import _GenerateJsonSchema, get_schema_of
 
 
 # Override Basemodel
 class BaseModel(PydanticBaseModel):
-    model_config = ConfigDict(
-        validate_assignment=True,
-        json_schema_extra=lambda s, _: exclude_properties_titles(s),
-    )
+    model_config = ConfigDict(validate_assignment=True)
 
     # nice repr if printing with rich
     def __rich_repr__(self):
@@ -116,14 +111,13 @@ LockEntry = Tuple[float, float, float]
 
 
 # We'd rather have tuples in our final model, because a
-# __root__ model is clunky from a python user perspective.
+# RootModel is clunky from a python user perspective.
 # We create this class to get validation for free in `root_validator`
 class _LockEntryModel(RootModel[LockEntry]):
     pass
 
 
 def _lock_schema_extra(schema: Dict[str, Any], _: Any) -> None:
-    exclude_properties_titles(schema)
     schema["additionalProperties"] = get_schema_of(LockEntry)
 
 
@@ -160,7 +154,6 @@ class _ValueScaleLockEntryModel(RootModel[ValueScaleLockEntry]):
 
 
 def _value_scale_lock_schema_extra(schema: Dict[str, Any], _: Any) -> None:
-    exclude_properties_titles(schema)
     schema["additionalProperties"] = get_schema_of(ValueScaleLockEntry)
 
 
@@ -191,14 +184,7 @@ class ValueScaleLock(BaseModel):
         return values
 
 
-def _axis_specific_lock_schema_extra(schema: Dict[str, Any], _: Any) -> None:
-    exclude_properties_titles(schema)
-    schema["properties"]["axis"] = simplify_enum_schema(schema["properties"]["axis"])
-
-
 class AxisSpecificLock(BaseModel):
-    model_config = ConfigDict(json_schema_extra=_axis_specific_lock_schema_extra)
-
     axis: Literal["x", "y"]
     lock: str
 
@@ -249,15 +235,8 @@ class Data(BaseModel):
     tiles: Optional[Tile] = None
 
 
-def _base_track_schema_extra(schema, _):
-    exclude_properties_titles(schema)
-    props = schema["properties"]
-    if "enum" in props["type"] or "allOf" in props["type"]:
-        props["type"] = simplify_enum_schema(props["type"])
-
-
 class BaseTrack(BaseModel, Generic[TrackTypeT]):
-    model_config = ConfigDict(extra="allow", json_schema_extra=_base_track_schema_extra)
+    model_config = ConfigDict(extra="allow")
 
     type: TrackTypeT
     uid: Optional[str] = None
@@ -500,11 +479,7 @@ ViewT = TypeVar("ViewT", bound=View)
 class Viewconf(BaseModel, Generic[ViewT]):
     """Root object describing a HiGlass visualization."""
 
-    model_config = ConfigDict(
-        extra="forbid",
-        title="HiGlass viewconf",
-        json_schema_extra=lambda s, _: exclude_properties_titles(s),
-    )
+    model_config = ConfigDict(extra="forbid")
 
     editable: Optional[bool] = True
     viewEditable: Optional[bool] = True
@@ -521,21 +496,10 @@ class Viewconf(BaseModel, Generic[ViewT]):
 
 
 def schema():
-    root = Viewconf.model_json_schema()
-
-    # remove titles in defintions
-    for d in root["$defs"].values():
-        d.pop("title", None)
-
-    # nice ordering, insert additional metadata
-    ordered_root = OrderedDict(
-        [
-            ("$schema", GenerateJsonSchema.schema_dialect),
-            *root.items(),
-        ]
-    )
-
-    return dict(ordered_root)
+    json_schema = Viewconf.model_json_schema(schema_generator=_GenerateJsonSchema)
+    json_schema["$schema"] = _GenerateJsonSchema.schema_dialect
+    json_schema["title"] = "HiGlass viewconf"
+    return json_schema
 
 
 def schema_json(**kwargs):
