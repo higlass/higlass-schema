@@ -26,6 +26,12 @@ class BaseModel(PydanticBaseModel):
     def __rich_repr__(self):
         return iter(self)
 
+    def json(self, exclude_none: bool = True, **kwargs):
+        return super().json(exclude_none=exclude_none, **kwargs)
+
+    def dict(self, exclude_none: bool = True, **kwargs):
+        return super().dict(exclude_none=exclude_none, **kwargs)
+
     def model_dump(self, exclude_none: bool = True, **kwargs):
         return super().model_dump(exclude_none=exclude_none, **kwargs)
 
