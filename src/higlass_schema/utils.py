@@ -1,9 +1,35 @@
-from typing import Any, Dict, TypeVar
+from typing import Any, Dict, TypeGuard, TypeVar, Union
 
 import pydantic_core.core_schema as core_schema
 from pydantic import BaseModel, TypeAdapter
-from pydantic._internal._core_utils import CoreSchemaOrField, is_core_schema
 from pydantic.json_schema import GenerateJsonSchema, JsonSchemaMode, JsonSchemaValue
+
+### Vendored from pydantic._internal._core_utils
+
+CoreSchemaField = Union[
+    core_schema.ModelField,
+    core_schema.DataclassField,
+    core_schema.TypedDictField,
+    core_schema.ComputedField,
+]
+
+CoreSchemaOrField = Union[core_schema.CoreSchema, CoreSchemaField]
+
+_CORE_SCHEMA_FIELD_TYPES = {
+    "typed-dict-field",
+    "dataclass-field",
+    "model-field",
+    "computed-field",
+}
+
+
+def is_core_schema(
+    schema: CoreSchemaOrField,
+) -> TypeGuard[core_schema.CoreSchema]:
+    return schema["type"] not in _CORE_SCHEMA_FIELD_TYPES
+
+
+### End vendored code
 
 
 class _GenerateJsonSchema(GenerateJsonSchema):
