@@ -9,8 +9,8 @@ from .schema import Track, View, Viewconf, schema_json
 console = Console()
 
 
-def export(_: argparse.Namespace) -> None:
-    print(schema_json())
+def export(args: argparse.Namespace) -> None:
+    print(schema_json(indent=args.indent))
 
 
 def check(args: argparse.Namespace) -> None:
@@ -44,6 +44,7 @@ def main():
 
     # export
     parser_export = subparsers.add_parser("export")
+    parser_export.add_argument("--indent", type=int)
     parser_export.set_defaults(func=export)
 
     # check
