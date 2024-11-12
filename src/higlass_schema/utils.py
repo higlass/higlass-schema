@@ -1,13 +1,13 @@
-from typing import Any, Dict, TypeVar, Union
+from __future__ import annotations
 
-try:
-    from typing import TypeGuard
-except ImportError:
-    from typing_extensions import TypeGuard
+from typing import TYPE_CHECKING, Any, TypeVar, Union
 
 import pydantic_core.core_schema as core_schema
 from pydantic import BaseModel, TypeAdapter
 from pydantic.json_schema import GenerateJsonSchema, JsonSchemaMode, JsonSchemaValue
+
+if TYPE_CHECKING:
+    from typing import TypeGuard
 
 ### Vendored from pydantic._internal._core_utils
 
@@ -95,7 +95,7 @@ def get_schema_of(type_: object):
     return TypeAdapter(type_).json_schema(schema_generator=_GenerateJsonSchema)
 
 
-def simplify_enum_schema(schema: Dict[str, Any]):
+def simplify_enum_schema(schema: dict[str, Any]):
     # reduce union of enums into single enum
     if "anyOf" in schema:
         enum = []

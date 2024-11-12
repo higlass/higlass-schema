@@ -87,11 +87,12 @@ wheels = [
 
 [[package]]
 name = "higlass-schema"
-version = "0.1.1.dev4+ga14c66a.d20241111"
+version = "0.1.1.dev11+g200e43f.d20241112"
 source = { editable = "." }
 dependencies = [
     { name = "pydantic" },
     { name = "rich" },
+    { name = "typing-extensions", marker = "python_full_version < '3.10'" },
 ]
 
 [package.dev-dependencies]
@@ -105,6 +106,7 @@ dev = [
 requires-dist = [
     { name = "pydantic", specifier = ">=2.0" },
     { name = "rich", specifier = ">=13.0.0" },
+    { name = "typing-extensions", marker = "python_full_version < '3.10'", specifier = ">=4.12.2" },
 ]
 
 [package.metadata.requires-dev]
