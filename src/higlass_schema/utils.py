@@ -1,4 +1,9 @@
-from typing import Any, Dict, TypeGuard, TypeVar, Union
+from typing import Any, Dict, TypeVar, Union
+
+try:
+    from typing import TypeGuard
+except ImportError:
+    from typing_extensions import TypeGuard
 
 import pydantic_core.core_schema as core_schema
 from pydantic import BaseModel, TypeAdapter
